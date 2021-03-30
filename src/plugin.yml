@@ -1,0 +1,11 @@
+## YAML Template.
+name: Hole_Filler_Plugin
+main: holeFiller.HoleFiller
+version: 0.2
+api-version: 1.16
+author: M0rica
+website: PLACEHOLDER
+commands:
+    fillhole:
+        description: something
+        usage: "Usage: /fillhole x y z"
