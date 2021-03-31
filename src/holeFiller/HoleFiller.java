@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -39,8 +40,15 @@ public class HoleFiller extends JavaPlugin{
     List<Location> blocks;
     int runID;
     Material[] notPlaceMaterials = new Material[]{Material.AIR, Material.CAVE_AIR};
-    List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.DEAD_BUSH});
-    List<Material> materialsToIgnore = Arrays.asList(new Material[]{Material.BEDROCK, Material.GRASS, Material.DEAD_BUSH});
+    List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH});
+    List<Material> materialsToIgnore = Arrays.asList(new Material[]{Material.BEDROCK, Material.GRASS, Material.TALL_GRASS, 
+                    Material.DEAD_BUSH, Material.WATER, Material.LAVA, Material.CAVE_AIR, Material.DANDELION, Material.POPPY, 
+                    Material.BLUE_ORCHID, Material.ALLIUM, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.CORNFLOWER, 
+                    Material.LILY_OF_THE_VALLEY, Material.WITHER_ROSE, Material.SUNFLOWER, Material.LILAC, Material.ROSE_BUSH, 
+                    Material.PEONY, Material.OAK_LOG, Material.SPRUCE_LOG, Material.BIRCH_LOG, Material.JUNGLE_LOG, 
+                    Material.ACACIA_LOG, Material.DARK_OAK_LOG, Material.CRIMSON_HYPHAE, Material.WARPED_HYPHAE, 
+                    Material.OAK_LEAVES, Material.SPRUCE_LEAVES, Material.BIRCH_LEAVES, Material.JUNGLE_LEAVES, Material.ACACIA_LEAVES,
+                    Material.DARK_OAK_LEAVES, Material.VINE});
     
     int maxDistance = 6;
     
@@ -59,6 +67,12 @@ public class HoleFiller extends JavaPlugin{
     public boolean onCommand(CommandSender cs, Command cmnd, String string, String[] args) {
         if(args.length == 3){
             fill(new Location(world, Double.parseDouble(args[0]), Double.parseDouble(args[1]), Double.parseDouble(args[2])));
+            return true;
+        } else if(args.length == 0){
+            Player player = (Player) cs;
+            Location loc = player.getTargetBlock((Set<Material>)null, 5).getLocation();
+            loc.setY(loc.getY()+1);
+            fill(loc);
             return true;
         } else if(args[0].equalsIgnoreCase("stop")){
             Bukkit.getScheduler().cancelTask(runID);
@@ -97,6 +111,7 @@ public class HoleFiller extends JavaPlugin{
             @Override
             public void run(){
                 if(!blocks.isEmpty()){
+                    fillBlock(blocks.get(0));
                     fillBlock(blocks.get(0));
                 } else {
                     Bukkit.getScheduler().cancelTask(runID);
@@ -144,8 +159,13 @@ public class HoleFiller extends JavaPlugin{
                     }
                 }
             }
+            blocks.remove(0);
+        } else {
+            blocks.remove(0);
+            if(!blocks.isEmpty()){
+                fillBlock(blocks.get(0));
+            }
         }
-        blocks.remove(0);
     }
     
     private Location[] getNeighbours(Location loc){
@@ -210,7 +230,7 @@ public class HoleFiller extends JavaPlugin{
         Material tempBlock;
         boolean foundBlock = false;
         List<Material> nearestBlocks = new ArrayList<>();
-        for(int i=1; i<maxDistance; i++){
+        for(int i=1; i<maxDistance+1; i++){
             for(int j=0; j<6; j++){
                 temp = loc.clone();
                 switch(j){
@@ -244,31 +264,51 @@ public class HoleFiller extends JavaPlugin{
         Location loc = blocks.get(0);
         int numOfBlocks = 0;
         Location temp;
-        for(int j=0; j<6; j++){
-            for(int i=1; i<maxDistance; i++){
+        int j;
+        HashMap<Integer, Boolean> directions = new HashMap<>();
+        for(j=0; j<6; j++){
+            directions.put(j, false);
+            //log.info("J: " + String.valueOf(j));
+            for(int i=1; i<maxDistance+1; i++){
+                //log.info("I: " + String.valueOf(i));
                 temp = loc.clone();
                 switch(j){
                     case 0:
-                        temp.add(i, 0, 0);
+                        temp = temp.add(i, 0, 0);
+                        break;
                     case 1:
-                        temp.add(-i, 0, 0);
+                        temp = temp.subtract(i, 0, 0);
+                        break;
                     case 2:
-                        temp.add(0, i, 0);
+                        temp = temp.add(0, i, 0);
+                        break;
                     case 3:
-                        temp.add(0, -i, 0);
+                        temp = temp.subtract(0, i, 0);
+                        break;
                     case 4:
-                        temp.add(0, 0, i);
+                        temp = temp.add(0, 0, i);
+                        break;
                     case 5:
-                        temp.add(0, 0, -i);
+                        temp = temp.subtract(0, 0, i);
+                        break;
                 }
-                if(!materialsToReplace.contains(temp.getBlock().getType()) && !materialsToIgnore.contains(temp.getBlock().getType())){
+                Material tempBlock = temp.getBlock().getType();
+                //log.info(String.format("Block %.0f %.0f %.0f %s", temp.getX(), temp.getY(), temp.getZ(), tempBlock.toString()));
+                if(!materialsToReplace.contains(tempBlock) && !materialsToIgnore.contains(tempBlock)){
                     numOfBlocks++;
+                    directions.replace(j, true);
                     break;
                 }
             }
         }
-        //log.info("Number of edges detected: " + String.valueOf(numOfBlocks));
-        return numOfBlocks >= 3;
+        log.info("Number of edges detected: " + String.valueOf(numOfBlocks));
+        boolean fill = numOfBlocks >= 4;
+        if(!fill){
+            if(directions.get(0) && directions.get(1) || directions.get(2) && directions.get(3) || directions.get(4) && directions.get(5)){
+                fill = true;
+            }
+        }
+        return fill;
     }
     
 }
