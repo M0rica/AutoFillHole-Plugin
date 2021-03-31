@@ -41,9 +41,13 @@ public class HoleFiller extends JavaPlugin{
     int runID;
     
     int blocksPlaced;
+    boolean isRunning = false;
     
     Material[] notPlaceMaterials = new Material[]{Material.AIR, Material.CAVE_AIR};
-    List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH});
+    List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH,
+                    Material.DANDELION, Material.POPPY, Material.BLUE_ORCHID, Material.ALLIUM, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.CORNFLOWER, 
+                    Material.LILY_OF_THE_VALLEY, Material.WITHER_ROSE, Material.SUNFLOWER, Material.LILAC, Material.ROSE_BUSH, 
+                    Material.PEONY});
     List<Material> materialsToIgnore = Arrays.asList(new Material[]{Material.BEDROCK, Material.GRASS, Material.TALL_GRASS, 
                     Material.DEAD_BUSH, Material.WATER, Material.LAVA, Material.CAVE_AIR, Material.DANDELION, Material.POPPY, 
                     Material.BLUE_ORCHID, Material.ALLIUM, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.CORNFLOWER, 
@@ -51,7 +55,7 @@ public class HoleFiller extends JavaPlugin{
                     Material.PEONY, Material.OAK_LOG, Material.SPRUCE_LOG, Material.BIRCH_LOG, Material.JUNGLE_LOG, 
                     Material.ACACIA_LOG, Material.DARK_OAK_LOG, Material.CRIMSON_HYPHAE, Material.WARPED_HYPHAE, 
                     Material.OAK_LEAVES, Material.SPRUCE_LEAVES, Material.BIRCH_LEAVES, Material.JUNGLE_LEAVES, Material.ACACIA_LEAVES,
-                    Material.DARK_OAK_LEAVES, Material.VINE});
+                    Material.DARK_OAK_LEAVES, Material.VINE, Material.SNOW});
     
     int maxDistance = 6;
     
@@ -75,6 +79,9 @@ public class HoleFiller extends JavaPlugin{
             Player player = (Player) cs;
             Location loc = player.getTargetBlock((Set<Material>)null, 5).getLocation();
             loc.setY(loc.getY()+1);
+            if(isRunning){
+                stop();
+            }
             fill(loc);
             return true;
         } else if(args[0].equalsIgnoreCase("stop")){
@@ -83,6 +90,12 @@ public class HoleFiller extends JavaPlugin{
             return true;
         }
         return false;
+    }
+    
+    public void stop(){
+        Bukkit.getScheduler().cancelTask(runID);
+        isRunning = false;
+        broadcastMsg("Done!");
     }
     
     
@@ -107,6 +120,7 @@ public class HoleFiller extends JavaPlugin{
     
     private void fill(Location start){
         //log.info(materialsToReplace.toString());
+        isRunning = true;
         blocks = new ArrayList<>();
         blocks.add(start);
         broadcastMsg("Starting to fill");
@@ -120,8 +134,7 @@ public class HoleFiller extends JavaPlugin{
                         blocksPlaced++;
                     }
                 } else {
-                    Bukkit.getScheduler().cancelTask(runID);
-                    broadcastMsg("Done!");
+                    stop();
                 }
             }
         }, 0L, 1L);
