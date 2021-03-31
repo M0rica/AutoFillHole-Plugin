@@ -39,6 +39,9 @@ public class HoleFiller extends JavaPlugin{
     
     List<Location> blocks;
     int runID;
+    
+    int blocksPlaced;
+    
     Material[] notPlaceMaterials = new Material[]{Material.AIR, Material.CAVE_AIR};
     List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH});
     List<Material> materialsToIgnore = Arrays.asList(new Material[]{Material.BEDROCK, Material.GRASS, Material.TALL_GRASS, 
@@ -110,9 +113,12 @@ public class HoleFiller extends JavaPlugin{
         this.runID = Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable(){
             @Override
             public void run(){
+                blocksPlaced = 0;
                 if(!blocks.isEmpty()){
-                    fillBlock(blocks.get(0));
-                    fillBlock(blocks.get(0));
+                    while(!blocks.isEmpty() && blocksPlaced < 3){
+                        fillBlock(blocks.get(0));
+                        blocksPlaced++;
+                    }
                 } else {
                     Bukkit.getScheduler().cancelTask(runID);
                     broadcastMsg("Done!");
@@ -301,7 +307,7 @@ public class HoleFiller extends JavaPlugin{
                 }
             }
         }
-        log.info("Number of edges detected: " + String.valueOf(numOfBlocks));
+        //log.info("Number of edges detected: " + String.valueOf(numOfBlocks));
         boolean fill = numOfBlocks >= 4;
         if(!fill){
             if(directions.get(0) && directions.get(1) || directions.get(2) && directions.get(3) || directions.get(4) && directions.get(5)){
