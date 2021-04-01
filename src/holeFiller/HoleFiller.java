@@ -8,6 +8,7 @@ package holeFiller;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -42,20 +43,23 @@ public class HoleFiller extends JavaPlugin{
     
     int blocksPlaced;
     boolean isRunning = false;
+    int allBlocksPlaced;
     
     Material[] notPlaceMaterials = new Material[]{Material.AIR, Material.CAVE_AIR};
     List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH,
                     Material.DANDELION, Material.POPPY, Material.BLUE_ORCHID, Material.ALLIUM, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.CORNFLOWER, 
                     Material.LILY_OF_THE_VALLEY, Material.WITHER_ROSE, Material.SUNFLOWER, Material.LILAC, Material.ROSE_BUSH, 
-                    Material.PEONY});
-    List<Material> materialsToIgnore = Arrays.asList(new Material[]{Material.BEDROCK, Material.GRASS, Material.TALL_GRASS, 
+                    Material.PEONY, Material.WHITE_TULIP, Material.ORANGE_TULIP, Material.RED_TULIP, Material.PINK_TULIP,});
+    List<Material> materialsToIgnore = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.BEDROCK, Material.GRASS, Material.TALL_GRASS, 
                     Material.DEAD_BUSH, Material.WATER, Material.LAVA, Material.CAVE_AIR, Material.DANDELION, Material.POPPY, 
                     Material.BLUE_ORCHID, Material.ALLIUM, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.CORNFLOWER, 
                     Material.LILY_OF_THE_VALLEY, Material.WITHER_ROSE, Material.SUNFLOWER, Material.LILAC, Material.ROSE_BUSH, 
-                    Material.PEONY, Material.OAK_LOG, Material.SPRUCE_LOG, Material.BIRCH_LOG, Material.JUNGLE_LOG, 
+                    Material.PEONY, Material.WHITE_TULIP, Material.ORANGE_TULIP, Material.RED_TULIP, Material.PINK_TULIP, Material.OAK_LOG, Material.SPRUCE_LOG, Material.BIRCH_LOG, Material.JUNGLE_LOG, 
                     Material.ACACIA_LOG, Material.DARK_OAK_LOG, Material.CRIMSON_HYPHAE, Material.WARPED_HYPHAE, 
                     Material.OAK_LEAVES, Material.SPRUCE_LEAVES, Material.BIRCH_LEAVES, Material.JUNGLE_LEAVES, Material.ACACIA_LEAVES,
                     Material.DARK_OAK_LEAVES, Material.VINE, Material.SNOW});
+    
+    HashSet<Material> materialsToIgnoreFindingStart = new HashSet<>(materialsToIgnore);
     
     int maxDistance = 6;
     
@@ -77,7 +81,7 @@ public class HoleFiller extends JavaPlugin{
             return true;
         } else if(args.length == 0){
             Player player = (Player) cs;
-            Location loc = player.getTargetBlock((Set<Material>)null, 5).getLocation();
+            Location loc = player.getTargetBlock(materialsToIgnoreFindingStart, 10).getLocation();
             loc.setY(loc.getY()+1);
             if(isRunning){
                 stop();
@@ -95,7 +99,7 @@ public class HoleFiller extends JavaPlugin{
     public void stop(){
         Bukkit.getScheduler().cancelTask(runID);
         isRunning = false;
-        broadcastMsg("Done!");
+        broadcastMsg(String.format("Done! (%d blocks filled)", allBlocksPlaced));
     }
     
     
@@ -123,6 +127,7 @@ public class HoleFiller extends JavaPlugin{
         isRunning = true;
         blocks = new ArrayList<>();
         blocks.add(start);
+        allBlocksPlaced = 0;
         broadcastMsg("Starting to fill");
         this.runID = Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable(){
             @Override
@@ -169,6 +174,7 @@ public class HoleFiller extends JavaPlugin{
             }
             if(placeBlock){
                 block.getBlock().setType(mostCommonMaterial.get(rand.nextInt(mostCommonMaterial.size())));
+                allBlocksPlaced++;
                 for(int i=0; i<neighbourBlocks.length; i++){
                     for(Material m: materialsToReplace){
                         if(neighbourBlocks[i] == m){
