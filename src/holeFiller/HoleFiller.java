@@ -49,7 +49,7 @@ public class HoleFiller extends JavaPlugin{
     List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH,
                     Material.DANDELION, Material.POPPY, Material.BLUE_ORCHID, Material.ALLIUM, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.CORNFLOWER, 
                     Material.LILY_OF_THE_VALLEY, Material.WITHER_ROSE, Material.SUNFLOWER, Material.LILAC, Material.ROSE_BUSH, 
-                    Material.PEONY, Material.WHITE_TULIP, Material.ORANGE_TULIP, Material.RED_TULIP, Material.PINK_TULIP,});
+                    Material.PEONY, Material.WHITE_TULIP, Material.ORANGE_TULIP, Material.RED_TULIP, Material.PINK_TULIP, Material.SEAGRASS, Material.KELP, Material.SNOW});
     List<Material> materialsToIgnore = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.BEDROCK, Material.GRASS, Material.TALL_GRASS, 
                     Material.DEAD_BUSH, Material.WATER, Material.LAVA, Material.CAVE_AIR, Material.DANDELION, Material.POPPY, 
                     Material.BLUE_ORCHID, Material.ALLIUM, Material.AZURE_BLUET, Material.OXEYE_DAISY, Material.CORNFLOWER, 
@@ -57,11 +57,11 @@ public class HoleFiller extends JavaPlugin{
                     Material.PEONY, Material.WHITE_TULIP, Material.ORANGE_TULIP, Material.RED_TULIP, Material.PINK_TULIP, Material.OAK_LOG, Material.SPRUCE_LOG, Material.BIRCH_LOG, Material.JUNGLE_LOG, 
                     Material.ACACIA_LOG, Material.DARK_OAK_LOG, Material.CRIMSON_HYPHAE, Material.WARPED_HYPHAE, 
                     Material.OAK_LEAVES, Material.SPRUCE_LEAVES, Material.BIRCH_LEAVES, Material.JUNGLE_LEAVES, Material.ACACIA_LEAVES,
-                    Material.DARK_OAK_LEAVES, Material.VINE, Material.SNOW});
+                    Material.DARK_OAK_LEAVES, Material.VINE, Material.SNOW, Material.SEAGRASS, Material.KELP});
     
     HashSet<Material> materialsToIgnoreFindingStart = new HashSet<>(materialsToIgnore);
     
-    int maxDistance = 6;
+    int maxDistance = 5;
     
     @Override
     public void onEnable(){
@@ -89,8 +89,9 @@ public class HoleFiller extends JavaPlugin{
             fill(loc);
             return true;
         } else if(args[0].equalsIgnoreCase("stop")){
-            Bukkit.getScheduler().cancelTask(runID);
-            broadcastMsg("Stoped filling!");
+            if(isRunning){
+                stop();
+            }
             return true;
         }
         return false;
@@ -99,7 +100,11 @@ public class HoleFiller extends JavaPlugin{
     public void stop(){
         Bukkit.getScheduler().cancelTask(runID);
         isRunning = false;
-        broadcastMsg(String.format("Done! (%d blocks filled)", allBlocksPlaced));
+        if(allBlocksPlaced == 0){
+            broadcastMsg("No hole detected, nothing was filled.");
+        } else {
+            broadcastMsg(String.format("Done! (%d blocks filled)", allBlocksPlaced));
+        }
     }
     
     
@@ -134,7 +139,7 @@ public class HoleFiller extends JavaPlugin{
             public void run(){
                 blocksPlaced = 0;
                 if(!blocks.isEmpty()){
-                    while(!blocks.isEmpty() && blocksPlaced < 3){
+                    while(!blocks.isEmpty() && blocksPlaced < 10){
                         fillBlock(blocks.get(0));
                         blocksPlaced++;
                     }
