@@ -156,14 +156,14 @@ public class HoleFiller extends JavaPlugin{
     
     private Location getNextBlock(){
         Location lowestBlock = blocks.get(0);
-        /*int x = lowestBlock.getBlockX();
+        int y = lowestBlock.getBlockY();
         
         for(int i=1; i<blocks.size(); i++){
             Location temp = blocks.get(i);
-            if(temp.getBlockX() < x){
+            if(temp.getBlockY() < y){
                 lowestBlock = temp;
             }
-        }*/
+        }
         blocks.remove(lowestBlock);
         return lowestBlock;
     }
@@ -381,6 +381,8 @@ public class HoleFiller extends JavaPlugin{
     
     private boolean isHardCorner(HashMap<Integer, Integer> directions, Location loc){
         
+        //log.info(loc.toString());
+        
         boolean xPzP = !materialsToIgnore.contains(loc.clone().add(1, 0, 1).getBlock().getType());
         boolean xPzN = !materialsToIgnore.contains(loc.clone().add(1, 0, -1).getBlock().getType());
         boolean xNzP = !materialsToIgnore.contains(loc.clone().add(-1, 0, 1).getBlock().getType());
@@ -391,12 +393,12 @@ public class HoleFiller extends JavaPlugin{
         boolean zP = directions.get(4) >= 3;
         boolean zN = directions.get(5) >= 3;
         
-        int edgeXPLeft = getEdgeLength(loc, 0);
-        int edgeXPRight = getEdgeLength(loc, 1);
-        int edgeXNLeft = getEdgeLength(loc, 2);
+        int edgeXPLeft = getEdgeLength(loc, 0); // works
+        int edgeXPRight = getEdgeLength(loc, 1); // works
+        int edgeXNLeft = getEdgeLength(loc, 2); 
         int edgeXNRight = getEdgeLength(loc, 3);
-        int edgeZPLeft = getEdgeLength(loc, 4);
-        int edgeZPRight = getEdgeLength(loc, 5);
+        int edgeZPLeft = getEdgeLength(loc, 4); //works
+        int edgeZPRight = getEdgeLength(loc, 5); // works
         int edgeZNLeft = getEdgeLength(loc, 6);
         int edgeZNRight = getEdgeLength(loc, 7);
         
@@ -405,11 +407,26 @@ public class HoleFiller extends JavaPlugin{
         boolean e3 = xN && zP && directions.get(0) == 1 && directions.get(5) == 1 && xNzN && xPzP;
         boolean e4 = xN && zN && directions.get(0) == 1 && directions.get(4) == 1 && xNzP && xPzN;*/
         
-        boolean e1 = xP && zP && directions.get(1) == 1 && directions.get(5) == 1 && edgeXPLeft >= 2 && edgeZPRight >= 2;
-        boolean e2 = xP && zN && directions.get(1) == 1 && directions.get(4) == 1 && edgeXPLeft >= 2 && edgeZPRight >= 2;
+        boolean e1 = xP && zP && directions.get(1) == 1 && directions.get(5) == 1; // works
+        boolean e2 = xP && zN && directions.get(1) == 1 && directions.get(4) == 1; // works
+        boolean e3 = xN && zP && directions.get(0) == 1 && directions.get(5) == 1; // !
+        boolean e4 = xN && zN && directions.get(0) == 1 && directions.get(4) == 1;
         
+        //log.info(String.format("BEFORE: E1: %b E2: %b E3: %b E4: %b", e1, e2, e3, e4));
         
-        //log.info(String.format("E1: %b E2: %b E3: %b E4: %b", e1, e2, e3, e4));
+        //log.info(String.format("XPLeft: %d, XPRight: %d XNLeft: %d XNRight: %d ZPLeft: %d ZPRight: %d ZNLeft: %d ZNRight: %d", edgeXPLeft, edgeXPRight, edgeXNLeft, edgeXNRight, edgeZPLeft, edgeZPRight, edgeZNLeft, edgeZNRight));
+        
+        if(e1){
+            e1 = (edgeXPLeft >= 1 && edgeZPRight >= 2) || (edgeXPLeft >= 2 && edgeZPRight >= 1);
+        } else if(e2){
+            e2 = (edgeXPRight >= 1 && edgeZNLeft >= 2) || (edgeXPRight >= 2 && edgeZNLeft >= 1);
+        } else if(e3){
+            e3 = (edgeXNRight >= 1 && edgeZPLeft >= 2) || (edgeXNRight >= 2 && edgeZPLeft >= 1);
+        } else if(e4){
+            e4 = (edgeXNLeft >= 1 && edgeZNRight >= 2) || (edgeXNLeft >= 2 && edgeZNRight >= 1);
+        }
+        
+        //log.info(String.format("AFTER: E1: %b E2: %b E3: %b E4: %b", e1, e2, e3, e4));
         
         return e1 || e2 || e3 || e4;
     }
@@ -427,16 +444,16 @@ public class HoleFiller extends JavaPlugin{
                     temp = temp.add(i, 0, 1);
                     break;
                 case 2:
-                    temp = temp.add(-i, 0, -1);
-                    break;
-                case 3:
                     temp = temp.add(-i, 0, 1);
                     break;
+                case 3:
+                    temp = temp.add(-i, 0, -1);
+                    break;
                 case 4:
-                    temp = temp.add(-1, 0, i);
+                    temp = temp.add(1, 0, i);
                     break;
                 case 5:
-                    temp = temp.add(1, 0, i);
+                    temp = temp.add(-1, 0, i);
                     break;
                 case 6:
                     temp = temp.add(-1, 0, -i);
