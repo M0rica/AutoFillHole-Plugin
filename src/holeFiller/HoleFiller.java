@@ -199,11 +199,8 @@ public class HoleFiller extends JavaPlugin{
                 block.getBlock().setType(mostCommonMaterial.get(rand.nextInt(mostCommonMaterial.size())));
                 allBlocksPlaced++;
                 for(int i=0; i<neighbourBlocks.length; i++){
-                    for(Material m: materialsToReplace){
-                        if(neighbourBlocks[i] == m){
-                            newBlocks.add(neighbours[i]);
-                            break;
-                        }
+                    if(materialsToReplace.contains(neighbourBlocks[i])){
+                        newBlocks.add(neighbours[i]);
                     }
                 }
             }
@@ -262,7 +259,7 @@ public class HoleFiller extends JavaPlugin{
             if(materialsToReplace.contains(m)){
                 if(temp >= 4 && !shouldGetFilled){
                     mostCommonMaterials.clear();
-                    mostCommonMaterials.add(m);
+                    //mostCommonMaterials.add(m);
                     return mostCommonMaterials;
                 }
             } else if(shouldGetFilled){
@@ -383,22 +380,26 @@ public class HoleFiller extends JavaPlugin{
         
         //log.info(loc.toString());
         
-        boolean xPzP = !materialsToIgnore.contains(loc.clone().add(1, 0, 1).getBlock().getType());
-        boolean xPzN = !materialsToIgnore.contains(loc.clone().add(1, 0, -1).getBlock().getType());
-        boolean xNzP = !materialsToIgnore.contains(loc.clone().add(-1, 0, 1).getBlock().getType());
-        boolean xNzN = !materialsToIgnore.contains(loc.clone().add(-1, 0, -1).getBlock().getType());
+        //boolean xPzP = !materialsToIgnore.contains(loc.clone().add(1, 0, 1).getBlock().getType());
+        //boolean xPzN = !materialsToIgnore.contains(loc.clone().add(1, 0, -1).getBlock().getType());
+        //boolean xNzP = !materialsToIgnore.contains(loc.clone().add(-1, 0, 1).getBlock().getType());
+        //boolean xNzN = !materialsToIgnore.contains(loc.clone().add(-1, 0, -1).getBlock().getType());
+        
+        int i = rand.nextInt(2);
+        int min_short = i;
+        int min_long = 2 + i;
         
         boolean xP = directions.get(0) >= 3;
         boolean xN = directions.get(1) >= 3;
         boolean zP = directions.get(4) >= 3;
         boolean zN = directions.get(5) >= 3;
         
-        int edgeXPLeft = getEdgeLength(loc, 0); // works
-        int edgeXPRight = getEdgeLength(loc, 1); // works
+        int edgeXPLeft = getEdgeLength(loc, 0);
+        int edgeXPRight = getEdgeLength(loc, 1);
         int edgeXNLeft = getEdgeLength(loc, 2); 
         int edgeXNRight = getEdgeLength(loc, 3);
-        int edgeZPLeft = getEdgeLength(loc, 4); //works
-        int edgeZPRight = getEdgeLength(loc, 5); // works
+        int edgeZPLeft = getEdgeLength(loc, 4);
+        int edgeZPRight = getEdgeLength(loc, 5);
         int edgeZNLeft = getEdgeLength(loc, 6);
         int edgeZNRight = getEdgeLength(loc, 7);
         
@@ -407,9 +408,9 @@ public class HoleFiller extends JavaPlugin{
         boolean e3 = xN && zP && directions.get(0) == 1 && directions.get(5) == 1 && xNzN && xPzP;
         boolean e4 = xN && zN && directions.get(0) == 1 && directions.get(4) == 1 && xNzP && xPzN;*/
         
-        boolean e1 = xP && zP && directions.get(1) == 1 && directions.get(5) == 1; // works
-        boolean e2 = xP && zN && directions.get(1) == 1 && directions.get(4) == 1; // works
-        boolean e3 = xN && zP && directions.get(0) == 1 && directions.get(5) == 1; // !
+        boolean e1 = xP && zP && directions.get(1) == 1 && directions.get(5) == 1;
+        boolean e2 = xP && zN && directions.get(1) == 1 && directions.get(4) == 1;
+        boolean e3 = xN && zP && directions.get(0) == 1 && directions.get(5) == 1;
         boolean e4 = xN && zN && directions.get(0) == 1 && directions.get(4) == 1;
         
         //log.info(String.format("BEFORE: E1: %b E2: %b E3: %b E4: %b", e1, e2, e3, e4));
@@ -417,13 +418,13 @@ public class HoleFiller extends JavaPlugin{
         //log.info(String.format("XPLeft: %d, XPRight: %d XNLeft: %d XNRight: %d ZPLeft: %d ZPRight: %d ZNLeft: %d ZNRight: %d", edgeXPLeft, edgeXPRight, edgeXNLeft, edgeXNRight, edgeZPLeft, edgeZPRight, edgeZNLeft, edgeZNRight));
         
         if(e1){
-            e1 = (edgeXPLeft >= 1 && edgeZPRight >= 2) || (edgeXPLeft >= 2 && edgeZPRight >= 1);
+            e1 = (edgeXPLeft >= min_short && edgeZPRight >= min_long) || (edgeXPLeft >= min_long && edgeZPRight >= min_short);
         } else if(e2){
-            e2 = (edgeXPRight >= 1 && edgeZNLeft >= 2) || (edgeXPRight >= 2 && edgeZNLeft >= 1);
+            e2 = (edgeXPRight >= min_short && edgeZNLeft >= min_long) || (edgeXPRight >= min_long && edgeZNLeft >= min_short);
         } else if(e3){
-            e3 = (edgeXNRight >= 1 && edgeZPLeft >= 2) || (edgeXNRight >= 2 && edgeZPLeft >= 1);
+            e3 = (edgeXNRight >= min_short && edgeZPLeft >= min_long) || (edgeXNRight >= min_long && edgeZPLeft >= min_short);
         } else if(e4){
-            e4 = (edgeXNLeft >= 1 && edgeZNRight >= 2) || (edgeXNLeft >= 2 && edgeZNRight >= 1);
+            e4 = (edgeXNLeft >= min_short && edgeZNRight >= min_long) || (edgeXNLeft >= min_long && edgeZNRight >= min_short);
         }
         
         //log.info(String.format("AFTER: E1: %b E2: %b E3: %b E4: %b", e1, e2, e3, e4));
