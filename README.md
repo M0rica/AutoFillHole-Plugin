@@ -6,7 +6,7 @@ AutoFillHole is an intelligent Minecraft Bukkit Plugin that automatically fills 
 title="AutoFillHole tech-demo" width="480" height="360" border="10" /></a>
 
 ## Features
-  - fills the holes intelligently with surrounding materials
+  - fills holes intelligently with surrounding materials
   - generates (kinda) realistic looking terrain as if there never was a hole
   - automatically detects if there is a hole to fill or where the hole ends to prevent your whole world from getting filled
   - works in holes, caves, small lakes, etc.
