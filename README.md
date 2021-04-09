@@ -2,8 +2,8 @@
 AutoFillHole is an intelligent Minecraft Bukkit Plugin that automatically fills holes as if there never was a hole. This is still work-in-progress, so there are a few things that migt not work properly yet.
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=3H9ZBvCc2uQ
-" target="_blank"><img src="http://img.youtube.com/vi/3H9ZBvCc2uQ/0.jpg" 
-title="AutoFillHole tech-demo" width="480" height="360" border="10" /></a>
+" target="_blank"><img src="http://img.youtube.com/vi/3H9ZBvCc2uQ/sddefault.jpg" 
+title="AutoFillHole YouTube tech-demo" width="640" height="480" border="10" /></a>
 
 ## Features
   - fills holes intelligently with surrounding materials
