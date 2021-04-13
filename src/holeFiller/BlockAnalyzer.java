@@ -34,6 +34,8 @@ public class BlockAnalyzer {
     Logger log;
     Random rand = new Random();
     
+    TerrainRuleChecker ruleObserver = new TerrainRuleChecker();
+    
     int maxDistance = 6;
     
     List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH,
@@ -137,7 +139,7 @@ public class BlockAnalyzer {
         return fill;
     }
     
-    private Location[] getNeighbours(Location loc){
+    public Location[] getNeighbours(Location loc){
         Location[] neighbours = new Location[6];
         //direct neighbours
         neighbours[0] = loc.clone().add(1, 0, 0);
@@ -159,7 +161,7 @@ public class BlockAnalyzer {
     private List<Material> findMostCommonMaterial(Material[] materials, Location loc){
         HashMap<Material, Integer> mostCommon = new HashMap<>();
         for(Material m: materials){
-            if(materialsToIgnore.contains(m)){
+            if(materialsToIgnore.contains(m) || !ruleObserver.blockFollowsRules(loc, m)){
                 continue;
             }
             if(mostCommon.containsKey(m)){
