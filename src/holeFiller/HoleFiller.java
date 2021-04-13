@@ -76,10 +76,13 @@ public class HoleFiller extends JavaPlugin{
     int maxDistance = 6;
     int blocksPerTick = 10;
     
+    BlockAnalyzer ba;
+    
     @Override
     public void onEnable(){
         world = Bukkit.getWorlds().get(0);
         log.info("Plugin enabled");
+        ba = new BlockAnalyzer(log, this);
     }
     
     @Override
@@ -139,6 +142,10 @@ public class HoleFiller extends JavaPlugin{
         });
     }
     
+    public void addNewBlocks(List<Location> blocks){
+        newBlocks.addAll(blocks);
+    }
+    
     
     private void fill(Location start){
         //log.info(materialsToReplace.toString());
@@ -184,36 +191,11 @@ public class HoleFiller extends JavaPlugin{
         Material blockTyp = block.getBlock().getType();
         if(materialsToReplace.contains(blockTyp)){
 
-            Location[] neighbours = getNeighbours(block);
-            Material[] neighbourBlocks = new Material[6];
-
-            for(int i=0; i<neighbours.length; i++){
-                neighbourBlocks[i] = neighbours[i].getBlock().getType();
-            }
-
-            List<Material> mostCommonMaterial = findMostCommonMaterial(neighbourBlocks, block);
-            if(mostCommonMaterial.isEmpty()){
-                    mostCommonMaterial = findNearestBlocks(block);
-                }
             //log.info("Block Material to fill with: " + mostCommonMaterial.toString());
-            boolean placeBlock = true;
-            if(mostCommonMaterial.isEmpty()){
-                placeBlock = false;
-            } else {
-                for(Material m: notPlaceMaterials){
-                    if(mostCommonMaterial.contains(m)){
-                        placeBlock = false;
-                    }
-                }
-            }
-            if(placeBlock){
-                block.getBlock().setType(mostCommonMaterial.get(rand.nextInt(mostCommonMaterial.size())));
+            Material m = ba.analyzeBlock(block);
+            if(m != null){
+                block.getBlock().setType(m);
                 allBlocksPlaced++;
-                for(int i=0; i<neighbourBlocks.length; i++){
-                    if(materialsToReplace.contains(neighbourBlocks[i])){
-                        newBlocks.add(neighbours[i]);
-                    }
-                }
             }
             //blocks.remove(0);
         } else {
@@ -224,263 +206,5 @@ public class HoleFiller extends JavaPlugin{
         }
     }
     
-    private Location[] getNeighbours(Location loc){
-        Location[] neighbours = new Location[6];
-        //direct neighbours
-        neighbours[0] = loc.clone().add(1, 0, 0);
-        neighbours[1] = loc.clone().add(-1, 0, 0);
-        neighbours[2] = loc.clone().add(0, 1, 0);
-        neighbours[3] = loc.clone().add(0, -1, 0);
-        neighbours[4] = loc.clone().add(0, 0, 1);
-        neighbours[5] = loc.clone().add(0, 0, -1);
-        
-        //indirect neighbours
-        /*neighbours[6] = loc.clone().add(1, 0, 1);
-        neighbours[7] = loc.clone().add(1, 0, -1);
-        neighbours[8] = loc.clone().add(-1, 0, 1);
-        neighbours[9] = loc.clone().add(-1, 0, -1);*/
-        
-        return neighbours;
-    }
-    
-    private List<Material> findMostCommonMaterial(Material[] materials, Location loc){
-        HashMap<Material, Integer> mostCommon = new HashMap<>();
-        for(Material m: materials){
-            if(materialsToIgnore.contains(m)){
-                continue;
-            }
-            if(mostCommon.containsKey(m)){
-                mostCommon.replace(m, mostCommon.get(m)+1);
-            } else {
-                mostCommon.put(m, 1);
-            }
-        }
-        List<Material> mostCommonMaterials = new ArrayList<>();
-        int max = 0;
-        boolean shouldGetFilled = shouldFill(loc);
-        //log.info("Should get filled: " + shouldGetFilled);
-        for(Material m: mostCommon.keySet()){
-            int temp = mostCommon.get(m);
-            /*if(m == Material.AIR){
-                if(temp >= 4){
-                    mostCommonMaterials.clear();
-                    mostCommonMaterials.add(m);
-                    return mostCommonMaterials;
-                }*/
-            if(materialsToReplace.contains(m)){
-                if(temp >= 4 && !shouldGetFilled){
-                    mostCommonMaterials.clear();
-                    //mostCommonMaterials.add(m);
-                    return mostCommonMaterials;
-                }
-            } else if(shouldGetFilled){
-                if(temp > max){
-                    mostCommonMaterials.clear();
-                    mostCommonMaterials.add(m);
-                    max = temp;
-                } else if(temp == max){
-                    mostCommonMaterials.add(m);
-                }
-            }
-        }
-        return mostCommonMaterials;
-    }
-    
-    private List<Material> findNearestBlocks(Location loc){
-        //Location loc = blocks.get(0);
-        Location temp;
-        Material tempBlock;
-        boolean foundBlock = false;
-        List<Material> nearestBlocks = new ArrayList<>();
-        for(int i=1; i<maxDistance+1; i++){
-            for(int j=0; j<6; j++){
-                temp = loc.clone();
-                switch(j){
-                    case 0:
-                        temp.add(i, 0, 0);
-                        break;
-                    case 1:
-                        temp.add(-i, 0, 0);
-                        break;
-                    case 2:
-                        temp.add(0, i, 0);
-                        break;
-                    case 3:
-                        temp.add(0, -i, 0);
-                        break;
-                    case 4:
-                        temp.add(0, 0, i);
-                        break;
-                    case 5:
-                        temp.add(0, 0, -i);
-                        break;
-                }
-                tempBlock = temp.getBlock().getType();
-                if(!materialsToIgnore.contains(tempBlock) && !materialsToReplace.contains(tempBlock)){
-                    nearestBlocks.add(tempBlock);
-                    foundBlock = true;
-                }
-            }
-            if(foundBlock){
-                break;
-            }
-        }
-        return findMostCommonMaterial(nearestBlocks.toArray(new Material[nearestBlocks.size()]), loc);
-    }
-    
-    private boolean shouldFill(Location loc){
-        //Location loc = blocks.get(0);
-        int numOfBlocks = 0;
-        Location temp;
-        int j;
-        HashMap<Integer, Integer> directions = new HashMap<>();
-        for(j=0; j<6; j++){
-            directions.put(j, maxDistance);
-            //log.info("J: " + String.valueOf(j));
-            for(int i=1; i<maxDistance+1; i++){
-                //log.info("I: " + String.valueOf(i));
-                temp = loc.clone();
-                switch(j){
-                    case 0:
-                        temp = temp.add(i, 0, 0);
-                        break;
-                    case 1:
-                        temp = temp.subtract(i, 0, 0);
-                        break;
-                    case 2:
-                        temp = temp.add(0, i, 0);
-                        break;
-                    case 3:
-                        temp = temp.subtract(0, i, 0);
-                        break;
-                    case 4:
-                        temp = temp.add(0, 0, i);
-                        break;
-                    case 5:
-                        temp = temp.subtract(0, 0, i);
-                        break;
-                }
-                Material tempBlock = temp.getBlock().getType();
-                //log.info(String.format("Block %.0f %.0f %.0f %s", temp.getX(), temp.getY(), temp.getZ(), tempBlock.toString()));
-                if(!materialsToReplace.contains(tempBlock) && !materialsToIgnore.contains(tempBlock)){
-                    numOfBlocks++;
-                    directions.replace(j, i);
-                    break;
-                }
-            }
-        }
-        //log.info("Number of edges detected: " + String.valueOf(numOfBlocks));
-        boolean fill = numOfBlocks >= 4;
-        if(!fill){
-            if(isOpposite(directions) || isHardCorner(directions, loc)){
-                fill = true;
-            }
-        }
-        return fill;
-    }
-    
-    private boolean isOpposite(HashMap<Integer, Integer> directions){
-        boolean x = directions.get(0) < maxDistance && directions.get(1) < maxDistance;
-        boolean y = directions.get(2) < maxDistance && directions.get(3) < maxDistance;
-        boolean z = directions.get(4) < maxDistance && directions.get(5) < maxDistance;
-        
-        return x || y || z;
-    }
-    
-    private boolean isHardCorner(HashMap<Integer, Integer> directions, Location loc){
-        
-        //log.info(loc.toString());
-        
-        //boolean xPzP = !materialsToIgnore.contains(loc.clone().add(1, 0, 1).getBlock().getType());
-        //boolean xPzN = !materialsToIgnore.contains(loc.clone().add(1, 0, -1).getBlock().getType());
-        //boolean xNzP = !materialsToIgnore.contains(loc.clone().add(-1, 0, 1).getBlock().getType());
-        //boolean xNzN = !materialsToIgnore.contains(loc.clone().add(-1, 0, -1).getBlock().getType());
-        
-        int i = rand.nextInt(2);
-        int min_short = i;
-        int min_long = 2 + i;
-        
-        boolean xP = directions.get(0) >= 3;
-        boolean xN = directions.get(1) >= 3;
-        boolean zP = directions.get(4) >= 3;
-        boolean zN = directions.get(5) >= 3;
-        
-        int edgeXPLeft = getEdgeLength(loc, 0);
-        int edgeXPRight = getEdgeLength(loc, 1);
-        int edgeXNLeft = getEdgeLength(loc, 2); 
-        int edgeXNRight = getEdgeLength(loc, 3);
-        int edgeZPLeft = getEdgeLength(loc, 4);
-        int edgeZPRight = getEdgeLength(loc, 5);
-        int edgeZNLeft = getEdgeLength(loc, 6);
-        int edgeZNRight = getEdgeLength(loc, 7);
-        
-        /*boolean e1 = xP && zP && directions.get(1) == 1 && directions.get(5) == 1 && xPzN && xNzP;
-        boolean e2 = xP && zN && directions.get(1) == 1 && directions.get(4) == 1 && xPzP && xNzN;
-        boolean e3 = xN && zP && directions.get(0) == 1 && directions.get(5) == 1 && xNzN && xPzP;
-        boolean e4 = xN && zN && directions.get(0) == 1 && directions.get(4) == 1 && xNzP && xPzN;*/
-        
-        boolean e1 = xP && zP && directions.get(1) == 1 && directions.get(5) == 1;
-        boolean e2 = xP && zN && directions.get(1) == 1 && directions.get(4) == 1;
-        boolean e3 = xN && zP && directions.get(0) == 1 && directions.get(5) == 1;
-        boolean e4 = xN && zN && directions.get(0) == 1 && directions.get(4) == 1;
-        
-        //log.info(String.format("BEFORE: E1: %b E2: %b E3: %b E4: %b", e1, e2, e3, e4));
-        
-        //log.info(String.format("XPLeft: %d, XPRight: %d XNLeft: %d XNRight: %d ZPLeft: %d ZPRight: %d ZNLeft: %d ZNRight: %d", edgeXPLeft, edgeXPRight, edgeXNLeft, edgeXNRight, edgeZPLeft, edgeZPRight, edgeZNLeft, edgeZNRight));
-        
-        if(e1){
-            e1 = (edgeXPLeft >= min_short && edgeZPRight >= min_long) || (edgeXPLeft >= min_long && edgeZPRight >= min_short);
-        } else if(e2){
-            e2 = (edgeXPRight >= min_short && edgeZNLeft >= min_long) || (edgeXPRight >= min_long && edgeZNLeft >= min_short);
-        } else if(e3){
-            e3 = (edgeXNRight >= min_short && edgeZPLeft >= min_long) || (edgeXNRight >= min_long && edgeZPLeft >= min_short);
-        } else if(e4){
-            e4 = (edgeXNLeft >= min_short && edgeZNRight >= min_long) || (edgeXNLeft >= min_long && edgeZNRight >= min_short);
-        }
-        
-        //log.info(String.format("AFTER: E1: %b E2: %b E3: %b E4: %b", e1, e2, e3, e4));
-        
-        return e1 || e2 || e3 || e4;
-    }
-    
-    private int getEdgeLength(Location loc, int direction){
-        int length = -1;
-        Location temp;
-        for(int i=0; i<maxDistance; i++){
-            temp = loc.clone();
-            switch(direction){
-                case 0:
-                    temp = temp.add(i, 0, -1);
-                    break;
-                case 1:
-                    temp = temp.add(i, 0, 1);
-                    break;
-                case 2:
-                    temp = temp.add(-i, 0, 1);
-                    break;
-                case 3:
-                    temp = temp.add(-i, 0, -1);
-                    break;
-                case 4:
-                    temp = temp.add(1, 0, i);
-                    break;
-                case 5:
-                    temp = temp.add(-1, 0, i);
-                    break;
-                case 6:
-                    temp = temp.add(-1, 0, -i);
-                    break;
-                case 7:
-                    temp = temp.add(1, 0, -i);
-                    break;
-            }
-            if(!materialsToIgnore.contains(temp.getBlock().getType())){
-                length++;
-            } else {
-                break;
-            }
-        }
-        return length;
-    }
     
 }
