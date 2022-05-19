@@ -56,6 +56,8 @@ public class HoleFiller extends JavaPlugin{
     int blocksPlaced;
     boolean isRunning = false;
     int allBlocksPlaced;
+
+    Undo undocmd = new Undo();
     
     Material[] notPlaceMaterials = new Material[]{Material.AIR, Material.CAVE_AIR};
     List<Material> materialsToReplace = Arrays.asList(new Material[]{Material.AIR, Material.CAVE_AIR, Material.WATER, Material.LAVA, Material.GRASS, Material.TALL_GRASS, Material.DEAD_BUSH,
@@ -83,6 +85,7 @@ public class HoleFiller extends JavaPlugin{
         world = Bukkit.getWorlds().get(0);
         log.info("Plugin enabled");
         ba = new BlockAnalyzer(log, this);
+        this.getCommand("undofillhole").setExecutor(undocmd);
     }
     
     @Override
@@ -91,24 +94,26 @@ public class HoleFiller extends JavaPlugin{
     }
     
     @Override
-    public boolean onCommand(CommandSender cs, Command cmnd, String string, String[] args) {
-        if(args.length == 3){
-            fill(new Location(world, Double.parseDouble(args[0]), Double.parseDouble(args[1]), Double.parseDouble(args[2])));
-            return true;
-        } else if(args.length == 0){
-            Player player = (Player) cs;
-            Location loc = player.getTargetBlock(materialsToIgnoreFindingStart, 10).getLocation();
-            loc.setY(loc.getY()+1);
-            if(isRunning){
-                stop();
+    public boolean onCommand(CommandSender cs, Command cmd, String string, String[] args) {
+        if (cmd.getName().equals("fillhole")) {
+            if (args.length == 3) {
+                fill(new Location(world, Double.parseDouble(args[0]), Double.parseDouble(args[1]), Double.parseDouble(args[2])));
+                return true;
+            } else if (args.length == 0) {
+                Player player = (Player) cs;
+                Location loc = player.getTargetBlock(materialsToIgnoreFindingStart, 10).getLocation();
+                loc.setY(loc.getY() + 1);
+                if (isRunning) {
+                    stop();
+                }
+                fill(loc);
+                return true;
+            } else if (args[0].equalsIgnoreCase("stop")) {
+                if (isRunning) {
+                    stop();
+                }
+                return true;
             }
-            fill(loc);
-            return true;
-        } else if(args[0].equalsIgnoreCase("stop")){
-            if(isRunning){
-                stop();
-            }
-            return true;
         }
         return false;
     }
@@ -154,6 +159,7 @@ public class HoleFiller extends JavaPlugin{
         blocks.add(start);
         allBlocksPlaced = 0;
         broadcastMsg("Starting to fill");
+        undocmd.clear();
         this.runID = Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable(){
             @Override
             public void run(){
@@ -194,6 +200,7 @@ public class HoleFiller extends JavaPlugin{
             //log.info("Block Material to fill with: " + mostCommonMaterial.toString());
             Material m = ba.analyzeBlock(block);
             if(m != null){
+                undocmd.addBlock(block, blockTyp);
                 block.getBlock().setType(m);
                 allBlocksPlaced++;
             }
